@@ -475,3 +475,114 @@ body {
 .fade-in-up          { animation: fadeInUp 0.85s ease both; }
 .fade-in-up-delay-1  { animation-delay: 0.2s; }
 .fade-in-up-delay-2  { animation-delay: 0.4s; }
+
+/* ─── Countdown page ─── */
+.countdown-page {
+  position: relative;
+  min-height: 100vh;
+  background: radial-gradient(ellipse at 50% 40%, #1a0a20 0%, #0a0010 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-family: 'Lato', sans-serif;
+}
+
+.countdown-inner {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2rem;
+}
+
+.countdown-since {
+  font-family: 'Great Vibes', cursive;
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  color: rgba(255, 200, 220, 0.7);
+  letter-spacing: 0.04em;
+  animation: fadeInUp 1s ease both;
+}
+
+.countdown-title {
+  font-family: 'Great Vibes', cursive;
+  font-size: clamp(2.6rem, 6vw, 4.2rem);
+  color: #fff;
+  font-weight: 400;
+  line-height: 1.2;
+  animation: fadeInUp 1s 0.15s ease both;
+}
+
+.countdown-grid {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.6rem, 2vw, 1.4rem);
+  margin: 0.5rem 0;
+  animation: fadeInUp 1s 0.3s ease both;
+}
+
+.cd-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 200, 220, 0.18);
+  border-radius: 16px;
+  padding: clamp(1rem, 2.5vw, 1.6rem) clamp(1.2rem, 3vw, 2rem);
+  min-width: clamp(72px, 11vw, 110px);
+  backdrop-filter: blur(8px);
+}
+
+.cd-num {
+  font-size: clamp(2.2rem, 5vw, 3.6rem);
+  font-weight: 300;
+  color: #fff;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.cd-label {
+  font-size: clamp(0.65rem, 1.2vw, 0.8rem);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: rgba(255, 200, 220, 0.6);
+}
+
+.cd-sep {
+  font-size: clamp(1.6rem, 3.5vw, 2.8rem);
+  color: rgba(255, 200, 220, 0.45);
+  font-weight: 300;
+  margin-bottom: 1.2rem;
+}
+
+.countdown-sub {
+  font-size: clamp(0.85rem, 1.8vw, 1rem);
+  color: rgba(255, 200, 220, 0.5);
+  letter-spacing: 0.12em;
+  text-transform: lowercase;
+  animation: fadeInUp 1s 0.45s ease both;
+}
+
+.countdown-arrived {
+  font-family: 'Great Vibes', cursive;
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  color: rgba(255, 200, 220, 0.9);
+  animation: fadeInUp 1s 0.3s ease both;
+}
+
+.cd-back {
+  margin-top: 1rem;
+  font-size: 0.82rem;
+  color: rgba(255, 200, 220, 0.4);
+  text-decoration: none;
+  letter-spacing: 0.1em;
+  transition: color 0.2s;
+  animation: fadeInUp 1s 0.6s ease both;
+}
+
+.cd-back:hover { color: rgba(255, 200, 220, 0.85); }
