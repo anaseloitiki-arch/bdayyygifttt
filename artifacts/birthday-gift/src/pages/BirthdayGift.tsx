@@ -435,30 +435,58 @@ export default function BirthdayGift() {
       {/* Stage 3: Revealed */}
       {stage === "revealed" && (
         <div className="stage-reveal">
-          {/* Header */}
-          <header className="reveal-header fade-in-up">
-            <p className="subtitle">
-              <span className="heart-deco">♥</span>
-              <span className="heart-deco">♥</span>
-              <span className="heart-deco">♥</span>
-            </p>
-            <h1>August 3rd &bull; Your Special Day</h1>
-          </header>
+          {/* Floating background hearts */}
+          <div className="floating-hearts-bg" aria-hidden="true">
+            {["♥","♡","♥","♡","♥","♡","♥","♡","♥","♡","♥","♡"].map((h, i) => (
+              <span key={i} className="bg-heart" style={{
+                left: `${(i * 8.5 + 3) % 100}%`,
+                animationDelay: `${i * 0.7}s`,
+                animationDuration: `${6 + (i % 4)}s`,
+                fontSize: `${1 + (i % 3) * 0.5}rem`,
+                opacity: 0.12 + (i % 3) * 0.06,
+              }}>{h}</span>
+            ))}
+          </div>
+
+          {/* Hero greeting */}
+          <div className="hero-greeting fade-in-up">
+            <p className="hero-sub">today is all about you 🎂</p>
+            <h1 className="hero-name">Happy Birthday, Helen!</h1>
+            <p className="hero-date">August 3rd &bull; Your Special Day</p>
+          </div>
 
           {/* Photo Gallery */}
-          <section className="gallery-section">
-            <h2>Moments I treasure most</h2>
+          <section className="gallery-section fade-in-up fade-in-up-delay-1">
+            <h2>moments i want to remember</h2>
             <div className="polaroid-grid">
-              <PolaroidCard src="photo1.jpg" caption="Us, always" delay={0.1} />
-              <PolaroidCard src="photo2.jpg" caption="My favorite smile" delay={0.25} />
-              <PolaroidCard src="photo3.jpg" caption="Our story" delay={0.4} />
+              <PolaroidCard src="photo1.jpg" caption="always" delay={0.1} />
+              <PolaroidCard src="photo2.jpg" caption="my fav" delay={0.25} />
+              <PolaroidCard src="photo3.jpg" caption="our story" delay={0.4} />
+            </div>
+          </section>
+
+          {/* Reasons cards */}
+          <section className="reasons-section fade-in-up fade-in-up-delay-2">
+            <h2>a few things</h2>
+            <div className="reasons-grid">
+              {[
+                { emoji: "🎮", text: "that one game of underground 2.0 that started everything" },
+                { emoji: "🕵️", text: "stalking people together like absolute detectives" },
+                { emoji: "💬", text: "the discord server that turned into actual friendship" },
+                { emoji: "🌟", text: "you're genuinely one of my favorite people" },
+              ].map((r, i) => (
+                <div className="reason-card" key={i} style={{ animationDelay: `${0.5 + i * 0.12}s` }}>
+                  <span className="reason-emoji">{r.emoji}</span>
+                  <p className="reason-text">{r.text}</p>
+                </div>
+              ))}
             </div>
           </section>
 
           {/* Letter */}
-          <section className="letter-section">
-            <h2>A letter, from my heart to yours</h2>
-            <div className="letter-box fade-in-up fade-in-up-delay-2">
+          <section className="letter-section fade-in-up fade-in-up-delay-3">
+            <h2>a little note</h2>
+            <div className="letter-box">
               <div className="letter-date">August 3rd</div>
               <div className="letter-body">
                 <p>
@@ -478,6 +506,12 @@ export default function BirthdayGift() {
               <span className="letter-signoff">Happy Birthday ♥</span>
             </div>
           </section>
+
+          {/* Footer */}
+          <footer className="reveal-footer">
+            <span>made with 💜 just for you</span>
+            <span className="footer-hearts">♥ ♥ ♥</span>
+          </footer>
         </div>
       )}
     </>
