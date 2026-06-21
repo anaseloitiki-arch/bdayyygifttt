@@ -249,10 +249,10 @@ function WhiteFlash({
 
     // Helper: show message at msgIndex starting at `startMs`
     // returns when the message finishes fading out
-    const FADE_IN = 700;
-    const HOLD = 1600;
-    const FADE_OUT = 700;
-    const GAP = 300;
+    const FADE_IN = 800;
+    const HOLD = 3200;
+    const FADE_OUT = 900;
+    const GAP = 400;
     const MSG_TOTAL = FADE_IN + HOLD + FADE_OUT + GAP;
 
     MESSAGES.forEach((_, i) => {
