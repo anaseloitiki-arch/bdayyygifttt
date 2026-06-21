@@ -462,29 +462,20 @@ export default function BirthdayGift() {
               <div className="letter-date">August 3rd</div>
               <div className="letter-body">
                 <p>
-                  My love, on this very special day, I want you to know that every
-                  single morning I wake up grateful — grateful that you exist, that
-                  you chose me, that I get to call you mine.
+                  I didn't want to just send a boring text or a gift card so i spent
+                  some time typing messin around with codes to make this for you (i got
+                  some help but i did 90% of it and it's definitely not perfect as your
+                  giftcard but I really wanted to build something personal for your
+                  birthday cuz you mean a lot to me.
                 </p>
                 <p>
-                  You bring warmth into every room you walk into. Your laugh is my
-                  favorite sound in the world. The way you care for the people around
-                  you makes me fall in love with you more every day.
+                  I hope you have the best day today :)
                 </p>
                 <p>
-                  Today I celebrate not just your birthday, but every moment that made
-                  you who you are — every laugh, every late night conversation, every
-                  quiet afternoon that somehow became my favorite memory.
-                </p>
-                <p>
-                  You deserve all the joy this world has to offer. I'll spend every
-                  day doing my best to make sure you feel just how loved you truly are.
-                </p>
-                <p>
-                  Happy birthday, my heart. Today, tomorrow, and always —
+                  Happy Birthday &lt;3
                 </p>
               </div>
-              <span className="letter-signoff">Yours, forever ♥</span>
+              <span className="letter-signoff">Happy Birthday ♥</span>
             </div>
           </section>
         </div>
