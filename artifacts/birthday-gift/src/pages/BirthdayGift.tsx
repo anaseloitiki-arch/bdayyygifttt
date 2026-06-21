@@ -1,4 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import * as THREE from "three";
+import { MTLLoader } from "three/examples/jsm/loaders/MTLLoader.js";
+import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 
 type Stage = "locked" | "flash" | "revealed";
 
@@ -74,47 +77,162 @@ function StarCanvas({ active }: { active: boolean }) {
   return <canvas ref={ref} className="particles-canvas" />;
 }
 
-/* ─── Sword clash animation ─── */
-type SwordPhase = "sliding" | "clashing" | "heart" | "heartOut" | "done";
+/* ─── 3D sword canvas ─── */
+type HeartPhase = "none" | "in" | "out";
 
-function SwordClash({ show }: { show: boolean }) {
-  const [phase, setPhase] = useState<SwordPhase | null>(null);
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+function Sword3DCanvas({
+  show,
+  onHeart,
+}: {
+  show: boolean;
+  onHeart: (p: HeartPhase) => void;
+}) {
+  const mountRef   = useRef<HTMLDivElement>(null);
+  const onHeartRef = useRef(onHeart);
+  useEffect(() => { onHeartRef.current = onHeart; }, [onHeart]);
 
   useEffect(() => {
-    if (!show) return;
-    const t = (fn: () => void, ms: number) => timers.current.push(setTimeout(fn, ms));
+    if (!show || !mountRef.current) return;
+    const mount = mountRef.current;
+    let mounted = true;
 
-    setPhase("sliding");
-    t(() => setPhase("clashing"), 900);
-    t(() => setPhase("heart"),    1350);
-    t(() => setPhase("heartOut"), 2150);
-    t(() => setPhase("done"),     2700);
+    const W = window.innerWidth, H = window.innerHeight;
 
-    return () => { timers.current.forEach(clearTimeout); timers.current = []; };
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    renderer.setSize(W, H);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setClearColor(0x000000, 0);
+    Object.assign(renderer.domElement.style, { position: "absolute", inset: "0", pointerEvents: "none" });
+    mount.appendChild(renderer.domElement);
+
+    const scene  = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(40, W / H, 0.1, 100);
+    camera.position.set(0, 0, 12);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+    const dir = new THREE.DirectionalLight(0xffd700, 1.8);
+    dir.position.set(2, 4, 6);
+    scene.add(dir);
+    const fill = new THREE.DirectionalLight(0xffffff, 0.5);
+    fill.position.set(-3, -1, 4);
+    scene.add(fill);
+
+    let leftSword: THREE.Object3D | null  = null;
+    let rightSword: THREE.Object3D | null = null;
+    let animId = 0;
+
+    const SLIDE_MS  = 900;
+    const CLASH_MS  = 500;
+    const HEART_AT  = SLIDE_MS + CLASH_MS;          // 1400
+    const HEARTOUT  = HEART_AT + 850;               // 2250
+    const TOTAL_MS  = HEARTOUT + 550;               // 2800
+
+    let heartFired    = false;
+    let heartOutFired = false;
+    const t0 = Date.now();
+    const ease = (t: number) => 1 - Math.pow(1 - Math.min(t, 1), 3);
+
+    const setOpacity = (obj: THREE.Object3D, opacity: number) => {
+      obj.traverse(node => {
+        const mesh = node as THREE.Mesh;
+        if (!mesh.isMesh) return;
+        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        mats.forEach(m => { (m as THREE.MeshPhongMaterial).transparent = true; (m as THREE.MeshPhongMaterial).opacity = opacity; });
+      });
+    };
+
+    const tick = () => {
+      if (!mounted) return;
+      animId = requestAnimationFrame(tick);
+      const elapsed = Date.now() - t0;
+
+      if (leftSword && rightSword) {
+        if (elapsed < SLIDE_MS) {
+          const p = ease(elapsed / SLIDE_MS);
+          leftSword.position.x  = -14 + p * 12;   // −14 → −2
+          rightSword.position.x =  14 - p * 12;   //  14 →  2
+        } else if (elapsed < SLIDE_MS + CLASH_MS) {
+          const p = (elapsed - SLIDE_MS) / CLASH_MS;
+          const shake = Math.sin(p * Math.PI * 10) * 0.28 * (1 - p);
+          leftSword.position.x  = -2 + shake;
+          rightSword.position.x =  2 - shake;
+        } else {
+          leftSword.position.x  = -2;
+          rightSword.position.x =  2;
+        }
+
+        if (elapsed > HEARTOUT) {
+          const p = Math.min((elapsed - HEARTOUT) / 550, 1);
+          setOpacity(leftSword,  1 - p);
+          setOpacity(rightSword, 1 - p);
+        }
+      }
+
+      if (elapsed >= HEART_AT  && !heartFired)    { heartFired    = true; onHeartRef.current("in");   }
+      if (elapsed >= HEARTOUT  && !heartOutFired) { heartOutFired = true; onHeartRef.current("out");  }
+      if (elapsed >= TOTAL_MS)                    { onHeartRef.current("none"); cancelAnimationFrame(animId); return; }
+
+      renderer.render(scene, camera);
+    };
+
+    const deepCloneMaterials = (obj: THREE.Object3D): THREE.Object3D => {
+      const clone = obj.clone(true);
+      clone.traverse(node => {
+        const mesh = node as THREE.Mesh;
+        if (!mesh.isMesh) return;
+        if (Array.isArray(mesh.material)) mesh.material = mesh.material.map(m => m.clone());
+        else mesh.material = (mesh.material as THREE.Material).clone();
+      });
+      return clone;
+    };
+
+    const mtlLoader = new MTLLoader();
+    mtlLoader.setPath("/");
+    mtlLoader.load("sword.mtl", (mats) => {
+      mats.preload();
+      const objLoader = new OBJLoader();
+      objLoader.setMaterials(mats);
+      objLoader.setPath("/");
+      objLoader.load("sword.obj", (obj) => {
+        if (!mounted) return;
+        obj.scale.setScalar(0.85);
+        obj.rotation.z = -Math.PI / 10;
+        obj.position.set(-14, 0, 0);
+        leftSword = obj;
+        scene.add(leftSword);
+
+        rightSword = deepCloneMaterials(obj);
+        rightSword.rotation.y = Math.PI;
+        rightSword.rotation.z = Math.PI / 10;
+        rightSword.position.set(14, 0, 0);
+        scene.add(rightSword);
+
+        animId = requestAnimationFrame(tick);
+      });
+    });
+
+    return () => {
+      mounted = false;
+      cancelAnimationFrame(animId);
+      renderer.dispose();
+      if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
+    };
   }, [show]);
 
-  if (!phase || phase === "done") return null;
+  return <div ref={mountRef} style={{ position: "absolute", inset: 0, pointerEvents: "none" }} />;
+}
 
-  const atCenter = phase !== "sliding";
-  const fading   = phase === "heartOut";
+function SwordClash({ show }: { show: boolean }) {
+  const [heartPhase, setHeartPhase] = useState<HeartPhase>("none");
+  const handleHeart = useCallback((p: HeartPhase) => setHeartPhase(p), []);
+
+  if (!show) return null;
 
   return (
     <div className="sword-stage">
-      <div
-        className={`sword-wrap sword-left${atCenter ? " sword-at-center" : ""}${phase === "clashing" ? " sword-clash-l" : ""}`}
-        style={{ opacity: fading ? 0 : 1, transition: fading ? "opacity 0.55s ease" : undefined }}
-      >
-        <span className="sword-emoji">🗡️</span>
-      </div>
-      <div
-        className={`sword-wrap sword-right${atCenter ? " sword-at-center" : ""}${phase === "clashing" ? " sword-clash-r" : ""}`}
-        style={{ opacity: fading ? 0 : 1, transition: fading ? "opacity 0.55s ease" : undefined }}
-      >
-        <span className="sword-emoji" style={{ display: "inline-block", transform: "scaleX(-1)" }}>🗡️</span>
-      </div>
-      {(phase === "heart" || phase === "heartOut") && (
-        <span className={`clash-heart${phase === "heartOut" ? " clash-heart-out" : ""}`}>♥</span>
+      <Sword3DCanvas show={show} onHeart={handleHeart} />
+      {heartPhase !== "none" && (
+        <span className={`clash-heart${heartPhase === "out" ? " clash-heart-out" : ""}`}>♥</span>
       )}
     </div>
   );
