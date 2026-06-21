@@ -208,7 +208,14 @@ function ConfettiCanvas({ active }: { active: boolean }) {
 const MESSAGES = [
   "helen <3",
   "i hope you have the best day and a really happy happy happy birthday :)",
-  "i'm still learning to code but i wanted to try making this for your birthday",
+  "i wanted to make you something special this year,",
+  "so i coded this little site just for you.",
+  "thinking back to february in underground 2.0,",
+  "i never imagined that one game would change everything for me",
+  "from playing over and over to stalking people together,",
+  "to making a discord server with friends",
+  "thank you for being my favorite person.",
+  "happy birthday i'm so glad i found you.",
 ];
 
 interface TextState {
