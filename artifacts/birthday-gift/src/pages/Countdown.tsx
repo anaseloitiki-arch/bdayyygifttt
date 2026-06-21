@@ -35,6 +35,13 @@ function useStars(ref: React.RefObject<HTMLCanvasElement | null>) {
   }, [ref]);
 }
 
+const START_DATE = new Date(2025, 7, 16, 0, 0, 0); // Aug 16 2025
+
+function getDaysTogether() {
+  const ms = Date.now() - START_DATE.getTime();
+  return Math.floor(ms / 86_400_000);
+}
+
 function getTarget() {
   const now  = new Date();
   const year = now.getMonth() > 7 || (now.getMonth() === 7 && now.getDate() > 16)
@@ -49,10 +56,14 @@ export default function Countdown() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   useStars(canvasRef);
 
-  const [diff, setDiff] = useState(() => getTarget().getTime() - Date.now());
+  const [diff,    setDiff]    = useState(() => getTarget().getTime() - Date.now());
+  const [together, setTogether] = useState(() => getDaysTogether());
 
   useEffect(() => {
-    const id = setInterval(() => setDiff(getTarget().getTime() - Date.now()), 1000);
+    const id = setInterval(() => {
+      setDiff(getTarget().getTime() - Date.now());
+      setTogether(getDaysTogether());
+    }, 1000);
     return () => clearInterval(id);
   }, []);
 
@@ -69,6 +80,15 @@ export default function Countdown() {
       <canvas ref={canvasRef} className="particles-canvas" />
 
       <div className="countdown-inner">
+
+        {/* Days together banner */}
+        <div className="together-block">
+          <span className="together-num">{together}</span>
+          <span className="together-label">days together</span>
+        </div>
+
+        <div className="cd-divider">✦</div>
+
         <p className="countdown-since">since august 16th</p>
         <h1 className="countdown-title">
           {arrived ? "happy anniversary 🤍" : "counting down to us"}
@@ -99,14 +119,10 @@ export default function Countdown() {
         )}
 
         {arrived && (
-          <p className="countdown-arrived">
-            today is the day ♥
-          </p>
+          <p className="countdown-arrived">today is the day ♥</p>
         )}
 
-        <p className="countdown-sub">
-          until one year with helen
-        </p>
+        <p className="countdown-sub">until one year with helen</p>
 
         <a href="/" className="cd-back">← back to your gift</a>
       </div>
