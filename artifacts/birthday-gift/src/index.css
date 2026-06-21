@@ -385,13 +385,13 @@ body {
 
 .sword-wrap {
   position: absolute;
-  width: 200px;
 }
 
-.sword-wrap img {
-  width: 100%;
-  height: auto;
+.sword-emoji {
+  font-size: 5rem;
+  line-height: 1;
   display: block;
+  user-select: none;
 }
 
 /* Left sword: starts off-screen left, angled down-right */

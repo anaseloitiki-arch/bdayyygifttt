@@ -105,13 +105,13 @@ function SwordClash({ show }: { show: boolean }) {
         className={`sword-wrap sword-left${atCenter ? " sword-at-center" : ""}${phase === "clashing" ? " sword-clash-l" : ""}`}
         style={{ opacity: fading ? 0 : 1, transition: fading ? "opacity 0.55s ease" : undefined }}
       >
-        <img src="/sword.png" alt="" />
+        <span className="sword-emoji">🗡️</span>
       </div>
       <div
         className={`sword-wrap sword-right${atCenter ? " sword-at-center" : ""}${phase === "clashing" ? " sword-clash-r" : ""}`}
         style={{ opacity: fading ? 0 : 1, transition: fading ? "opacity 0.55s ease" : undefined }}
       >
-        <img src="/sword.png" alt="" style={{ transform: "scaleX(-1)" }} />
+        <span className="sword-emoji" style={{ display: "inline-block", transform: "scaleX(-1)" }}>🗡️</span>
       </div>
       {(phase === "heart" || phase === "heartOut") && (
         <span className={`clash-heart${phase === "heartOut" ? " clash-heart-out" : ""}`}>♥</span>
