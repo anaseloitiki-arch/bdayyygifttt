@@ -455,6 +455,9 @@ export default function BirthdayGift() {
           {/* Footer */}
           <footer className="reveal-footer">
             made with care, just for you
+            <a href="/countdown" className="reveal-countdown-link">
+              view the countdown →
+            </a>
           </footer>
         </div>
       )}
