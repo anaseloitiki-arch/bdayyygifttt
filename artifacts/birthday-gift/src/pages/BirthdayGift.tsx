@@ -205,11 +205,18 @@ function ConfettiCanvas({ active }: { active: boolean }) {
   return <canvas ref={ref} className="confetti-canvas" />;
 }
 
-interface TextAnimState {
-  phase: "in" | "hold" | "out" | "done";
+const MESSAGES = [
+  "helen <3",
+  "i hope you have the best day and a really happy happy happy birthday :)",
+  "i'm still learning to code but i wanted to try making this for your birthday",
+];
+
+interface TextState {
+  msgIndex: number;
   opacity: number;
   scale: number;
   blur: number;
+  transitioning: boolean;
 }
 
 function WhiteFlash({
@@ -219,61 +226,65 @@ function WhiteFlash({
   visible: boolean;
   onDone: () => void;
 }) {
-  const [textAnim, setTextAnim] = useState<TextAnimState>({
-    phase: "in",
+  const [textState, setTextState] = useState<TextState>({
+    msgIndex: 0,
     opacity: 0,
     scale: 0.88,
     blur: 8,
+    transitioning: false,
   });
   const [flashOpacity, setFlashOpacity] = useState(0);
   const doneRef = useRef(false);
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => {
     if (!visible) return;
 
-    let t1: ReturnType<typeof setTimeout>;
-    let t2: ReturnType<typeof setTimeout>;
-    let t3: ReturnType<typeof setTimeout>;
-    let t4: ReturnType<typeof setTimeout>;
-    let t5: ReturnType<typeof setTimeout>;
+    const add = (fn: () => void, ms: number) => {
+      const id = setTimeout(fn, ms);
+      timersRef.current.push(id);
+    };
 
-    // White flash in immediately
     setFlashOpacity(1);
 
-    // Text fades in after 300ms
-    t1 = setTimeout(() => {
-      setTextAnim({ phase: "in", opacity: 1, scale: 1.04, blur: 0 });
-    }, 300);
+    // Helper: show message at msgIndex starting at `startMs`
+    // returns when the message finishes fading out
+    const FADE_IN = 700;
+    const HOLD = 1600;
+    const FADE_OUT = 700;
+    const GAP = 300;
+    const MSG_TOTAL = FADE_IN + HOLD + FADE_OUT + GAP;
 
-    // Hold
-    t2 = setTimeout(() => {
-      setTextAnim({ phase: "hold", opacity: 1, scale: 1.04, blur: 0 });
-    }, 2000);
+    MESSAGES.forEach((_, i) => {
+      const base = 300 + i * MSG_TOTAL;
 
-    // Text fades out with blur
-    t3 = setTimeout(() => {
-      setTextAnim({ phase: "out", opacity: 0, scale: 1.1, blur: 12 });
-    }, 3000);
+      // fade in
+      add(() => {
+        setTextState({ msgIndex: i, opacity: 1, scale: 1.04, blur: 0, transitioning: false });
+      }, base);
 
-    // White starts fading out after text is gone
-    t4 = setTimeout(() => {
-      setFlashOpacity(0);
-    }, 4200);
+      // fade out
+      add(() => {
+        setTextState({ msgIndex: i, opacity: 0, scale: 1.1, blur: 10, transitioning: true });
+      }, base + FADE_IN + HOLD);
+    });
+
+    const totalDuration = 300 + MESSAGES.length * MSG_TOTAL;
+
+    // White fades out
+    add(() => setFlashOpacity(0), totalDuration + 200);
 
     // Reveal stage 3
-    t5 = setTimeout(() => {
+    add(() => {
       if (!doneRef.current) {
         doneRef.current = true;
         onDone();
       }
-    }, 5000);
+    }, totalDuration + 1200);
 
     return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-      clearTimeout(t4);
-      clearTimeout(t5);
+      timersRef.current.forEach(clearTimeout);
+      timersRef.current = [];
     };
   }, [visible, onDone]);
 
@@ -284,24 +295,21 @@ function WhiteFlash({
       className="white-flash"
       style={{
         opacity: flashOpacity,
-        transition: flashOpacity === 0 ? "opacity 0.9s ease" : "opacity 0.25s ease",
+        transition: flashOpacity === 0 ? "opacity 1s ease" : "opacity 0.2s ease",
       }}
     >
       <p
         className="birthday-text"
         style={{
-          opacity: textAnim.opacity,
-          transform: `scale(${textAnim.scale})`,
-          filter: `blur(${textAnim.blur}px)`,
-          transition:
-            textAnim.phase === "in"
-              ? "opacity 0.9s ease, transform 1.1s ease, filter 0.9s ease"
-              : textAnim.phase === "out"
-              ? "opacity 0.9s ease, transform 0.9s ease, filter 0.9s ease"
-              : "none",
+          opacity: textState.opacity,
+          transform: `scale(${textState.scale})`,
+          filter: `blur(${textState.blur}px)`,
+          transition: textState.transitioning
+            ? "opacity 0.7s ease, transform 0.7s ease, filter 0.7s ease"
+            : "opacity 0.7s ease, transform 0.8s ease, filter 0.7s ease",
         }}
       >
-        Happy Birthday<br />Mon Amour
+        {MESSAGES[textState.msgIndex]}
       </p>
     </div>
   );
