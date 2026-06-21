@@ -74,6 +74,52 @@ function StarCanvas({ active }: { active: boolean }) {
   return <canvas ref={ref} className="particles-canvas" />;
 }
 
+/* ─── Sword clash animation ─── */
+type SwordPhase = "sliding" | "clashing" | "heart" | "heartOut" | "done";
+
+function SwordClash({ show }: { show: boolean }) {
+  const [phase, setPhase] = useState<SwordPhase | null>(null);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(() => {
+    if (!show) return;
+    const t = (fn: () => void, ms: number) => timers.current.push(setTimeout(fn, ms));
+
+    setPhase("sliding");
+    t(() => setPhase("clashing"), 900);
+    t(() => setPhase("heart"),    1350);
+    t(() => setPhase("heartOut"), 2150);
+    t(() => setPhase("done"),     2700);
+
+    return () => { timers.current.forEach(clearTimeout); timers.current = []; };
+  }, [show]);
+
+  if (!phase || phase === "done") return null;
+
+  const atCenter = phase !== "sliding";
+  const fading   = phase === "heartOut";
+
+  return (
+    <div className="sword-stage">
+      <div
+        className={`sword-wrap sword-left${atCenter ? " sword-at-center" : ""}${phase === "clashing" ? " sword-clash-l" : ""}`}
+        style={{ opacity: fading ? 0 : 1, transition: fading ? "opacity 0.55s ease" : undefined }}
+      >
+        <img src="/sword.png" alt="" />
+      </div>
+      <div
+        className={`sword-wrap sword-right${atCenter ? " sword-at-center" : ""}${phase === "clashing" ? " sword-clash-r" : ""}`}
+        style={{ opacity: fading ? 0 : 1, transition: fading ? "opacity 0.55s ease" : undefined }}
+      >
+        <img src="/sword.png" alt="" style={{ transform: "scaleX(-1)" }} />
+      </div>
+      {(phase === "heart" || phase === "heartOut") && (
+        <span className={`clash-heart${phase === "heartOut" ? " clash-heart-out" : ""}`}>♥</span>
+      )}
+    </div>
+  );
+}
+
 /* ─── Messages on white screen ─── */
 const MESSAGES = [
   "helen <3",
@@ -96,17 +142,19 @@ interface TextState {
   transitioning: boolean;
 }
 
+const SWORD_AFTER = 4;  // show swords after message index 4
+const SWORD_DUR   = 2800; // ms the sword animation occupies
+
 function WhiteFlash({ visible, onDone }: { visible: boolean; onDone: () => void }) {
-  const [text, setText] = useState<TextState>({ msgIndex: 0, opacity: 0, scale: 0.94, blur: 6, transitioning: false });
+  const [text, setText]           = useState<TextState>({ msgIndex: 0, opacity: 0, scale: 0.94, blur: 6, transitioning: false });
   const [flashOpacity, setFlashOpacity] = useState(0);
+  const [showSwords, setShowSwords]     = useState(false);
   const doneRef   = useRef(false);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => {
     if (!visible) return;
-    const add = (fn: () => void, ms: number) => {
-      timersRef.current.push(setTimeout(fn, ms));
-    };
+    const add = (fn: () => void, ms: number) => timersRef.current.push(setTimeout(fn, ms));
 
     setFlashOpacity(1);
 
@@ -114,12 +162,19 @@ function WhiteFlash({ visible, onDone }: { visible: boolean; onDone: () => void 
     const MSG = FADE_IN + HOLD + FADE_OUT + GAP;
 
     MESSAGES.forEach((_, i) => {
-      const base = 300 + i * MSG;
+      // Messages after the sword interlude are shifted by SWORD_DUR
+      const extra = i > SWORD_AFTER ? SWORD_DUR : 0;
+      const base  = 300 + i * MSG + extra;
       add(() => setText({ msgIndex: i, opacity: 1, scale: 1.02, blur: 0, transitioning: false }), base);
       add(() => setText({ msgIndex: i, opacity: 0, scale: 1.06, blur: 8, transitioning: true }),  base + FADE_IN + HOLD);
     });
 
-    const total = 300 + MESSAGES.length * MSG;
+    // Sword animation starts right when message 4's gap ends (= where msg 5 would start without offset)
+    const swordStart = 300 + (SWORD_AFTER + 1) * MSG;
+    add(() => setShowSwords(true),  swordStart);
+    add(() => setShowSwords(false), swordStart + SWORD_DUR);
+
+    const total = 300 + MESSAGES.length * MSG + SWORD_DUR;
     add(() => setFlashOpacity(0), total + 300);
     add(() => { if (!doneRef.current) { doneRef.current = true; onDone(); } }, total + 1400);
 
@@ -133,8 +188,9 @@ function WhiteFlash({ visible, onDone }: { visible: boolean; onDone: () => void 
       opacity: flashOpacity,
       transition: flashOpacity === 0 ? "opacity 1.1s ease" : "opacity 0.2s ease",
     }}>
+      <SwordClash show={showSwords} />
       <p className="birthday-text" style={{
-        opacity:    text.opacity,
+        opacity:    showSwords ? 0 : text.opacity,
         transform:  `scale(${text.scale})`,
         filter:     `blur(${text.blur}px)`,
         transition: "opacity 0.8s ease, transform 0.9s ease, filter 0.8s ease",

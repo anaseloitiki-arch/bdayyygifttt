@@ -371,6 +371,101 @@ body {
   letter-spacing: 0.12em;
 }
 
+/* ── Sword clash ── */
+
+.sword-stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.sword-wrap {
+  position: absolute;
+  width: 200px;
+}
+
+.sword-wrap img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Left sword: starts off-screen left, angled down-right */
+.sword-left {
+  transform: translateX(-130vw) rotate(-40deg);
+  transition: transform 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.sword-left.sword-at-center {
+  transform: translateX(-88px) rotate(-40deg);
+}
+
+.sword-left.sword-clash-l {
+  animation: clashL 0.38s ease forwards;
+  transition: none;
+}
+
+/* Right sword: starts off-screen right, angled down-left (image mirrored inline) */
+.sword-right {
+  transform: translateX(130vw) rotate(40deg);
+  transition: transform 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.sword-right.sword-at-center {
+  transform: translateX(88px) rotate(40deg);
+}
+
+.sword-right.sword-clash-r {
+  animation: clashR 0.38s ease forwards;
+  transition: none;
+}
+
+@keyframes clashL {
+  0%   { transform: translateX(-88px) rotate(-40deg); }
+  20%  { transform: translateX(-72px) rotate(-37deg); }
+  45%  { transform: translateX(-100px) rotate(-43deg); }
+  65%  { transform: translateX(-78px) rotate(-39deg); }
+  85%  { transform: translateX(-95px) rotate(-41deg); }
+  100% { transform: translateX(-88px) rotate(-40deg); }
+}
+
+@keyframes clashR {
+  0%   { transform: translateX(88px) rotate(40deg); }
+  20%  { transform: translateX(72px) rotate(37deg); }
+  45%  { transform: translateX(100px) rotate(43deg); }
+  65%  { transform: translateX(78px) rotate(39deg); }
+  85%  { transform: translateX(95px) rotate(41deg); }
+  100% { transform: translateX(88px) rotate(40deg); }
+}
+
+/* Heart pop */
+.clash-heart {
+  position: absolute;
+  font-size: 3.2rem;
+  color: #e0306e;
+  text-shadow: 0 2px 14px rgba(224, 48, 110, 0.35);
+  z-index: 2;
+  animation: heartPop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes heartPop {
+  from { transform: scale(0) translateY(8px); opacity: 0; }
+  to   { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.clash-heart-out {
+  animation: heartFade 0.55s ease both;
+}
+
+@keyframes heartFade {
+  from { transform: scale(1); opacity: 1; }
+  to   { transform: scale(0.6) translateY(-14px); opacity: 0; }
+}
+
 /* Fade-in utility */
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(22px); }
