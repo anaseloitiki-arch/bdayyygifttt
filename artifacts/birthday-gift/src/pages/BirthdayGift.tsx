@@ -423,6 +423,7 @@ export default function BirthdayGift() {
                 { emoji: "🕵️", text: "stalking people together like absolute detectives" },
                 { emoji: "💬", text: "the discord server that turned into actual friendship" },
                 { emoji: "🌟", text: "you're genuinely one of my favorite people" },
+                { emoji: "🎤", text: "last but not least — putting up with me being obsessed with Doja Cat (Jealous type)" },
               ].map((r, i) => (
                 <div className="reason-card" key={i}>
                   <span className="reason-emoji">{r.emoji}</span>
