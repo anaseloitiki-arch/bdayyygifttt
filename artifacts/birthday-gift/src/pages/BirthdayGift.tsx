@@ -339,7 +339,8 @@ function PolaroidCard({ src, caption, delay }: { src: string; caption: string; d
 
 /* ─── Main component ─── */
 export default function BirthdayGift() {
-  const [stage,     setStage]     = useState<Stage>("locked");
+  const skipIntro = new URLSearchParams(window.location.search).has("skip");
+  const [stage,     setStage]     = useState<Stage>(skipIntro ? "revealed" : "locked");
   const [password,  setPassword]  = useState("");
   const [shaking,   setShaking]   = useState(false);
   const [errorHint, setErrorHint] = useState("");
