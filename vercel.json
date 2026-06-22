@@ -1,5 +1,5 @@
 {
   "buildCommand": "npm run build",
-  "outputDirectory": "dist",
+  "outputDirectory": "artifacts/birthday-gift/dist/public",
   "framework": null
 }
