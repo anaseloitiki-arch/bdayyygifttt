@@ -167,16 +167,26 @@ body {
 
 .stage-reveal {
   min-height: 100vh;
-  background: #faf8f5;
-  color: #1e1428;
+  background: radial-gradient(ellipse at 50% 0%, #160828 0%, #060010 60%);
+  color: #f0e8ff;
   padding-bottom: 5rem;
+}
+
+/* Section eyebrow label */
+.section-eyebrow {
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(200, 160, 255, 0.55);
+  text-align: center;
+  margin-bottom: 0.4rem;
 }
 
 /* Hero */
 .hero-greeting {
   text-align: center;
   padding: 5.5rem 1.5rem 3rem;
-  border-bottom: 1px solid rgba(180, 130, 180, 0.12);
+  border-bottom: 1px solid rgba(160, 100, 220, 0.15);
   margin-bottom: 1rem;
 }
 
@@ -185,7 +195,7 @@ body {
   font-weight: 300;
   font-size: 0.8rem;
   letter-spacing: 0.35em;
-  color: #b08ab0;
+  color: rgba(200, 160, 255, 0.6);
   text-transform: uppercase;
   margin-bottom: 0.9rem;
 }
@@ -193,8 +203,9 @@ body {
 .hero-name {
   font-family: 'Great Vibes', cursive;
   font-size: clamp(3rem, 9vw, 5.5rem);
-  color: #2a1540;
+  color: #fff;
   line-height: 1.1;
+  text-shadow: 0 0 40px rgba(180, 100, 255, 0.3);
 }
 
 /* Gallery */
@@ -206,15 +217,14 @@ body {
 
 .gallery-section h2,
 .reasons-section h2,
+.fun-section h2,
 .letter-section h2 {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.1rem;
-  font-style: italic;
+  font-family: 'Great Vibes', cursive;
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
   font-weight: 400;
-  color: #7a5a8a;
+  color: rgba(240, 210, 255, 0.9);
   text-align: center;
-  letter-spacing: 0.04em;
-  margin-bottom: 2.2rem;
+  margin-bottom: 2rem;
 }
 
 .polaroid-grid {
@@ -228,8 +238,8 @@ body {
   background: #fff;
   padding: 12px 12px 46px;
   box-shadow:
-    0 2px 6px rgba(0,0,0,0.09),
-    0 8px 24px rgba(0,0,0,0.08);
+    0 4px 20px rgba(0,0,0,0.4),
+    0 0 0 1px rgba(255,255,255,0.06);
   width: clamp(190px, 26vw, 230px);
   transition: transform 0.4s cubic-bezier(0.34, 1.4, 0.64, 1), box-shadow 0.4s ease;
   cursor: default;
@@ -240,10 +250,10 @@ body {
 .polaroid:nth-child(3) { transform: rotate(-1.5deg); }
 
 .polaroid:hover {
-  transform: rotate(0deg) translateY(-8px) !important;
+  transform: rotate(0deg) translateY(-10px) scale(1.03) !important;
   box-shadow:
-    0 8px 20px rgba(0,0,0,0.13),
-    0 20px 48px rgba(0,0,0,0.1);
+    0 16px 40px rgba(160, 80, 255, 0.25),
+    0 4px 12px rgba(0,0,0,0.4);
 }
 
 .polaroid img {
@@ -256,7 +266,7 @@ body {
 .polaroid-placeholder {
   width: 100%;
   aspect-ratio: 1;
-  background: #f2eaf7;
+  background: #ede8f5;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -281,6 +291,52 @@ body {
   padding-top: 10px;
 }
 
+/* Fun buttons section */
+.fun-section {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 0 1.5rem 4rem;
+}
+
+.fun-buttons-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.fun-btn {
+  background: transparent;
+  border: 1.5px solid var(--btn-color, #a78bfa);
+  color: var(--btn-color, #a78bfa);
+  border-radius: 999px;
+  padding: 0.6rem 1.25rem;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 400;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+  box-shadow: 0 0 0 0 var(--btn-color, #a78bfa);
+}
+
+.fun-btn:hover {
+  background: color-mix(in srgb, var(--btn-color, #a78bfa) 12%, transparent);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--btn-color, #a78bfa) 35%, transparent);
+}
+
+@keyframes btnPop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.18); }
+  70%  { transform: scale(0.93); }
+  100% { transform: scale(1); }
+}
+
+.fun-btn-pop {
+  animation: btnPop 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  background: color-mix(in srgb, var(--btn-color, #a78bfa) 20%, transparent);
+  box-shadow: 0 0 28px color-mix(in srgb, var(--btn-color, #a78bfa) 50%, transparent);
+}
+
 /* Reason cards */
 .reasons-section {
   max-width: 840px;
@@ -295,18 +351,19 @@ body {
 }
 
 .reason-card {
-  background: #fff;
-  border: 1px solid rgba(180, 130, 180, 0.15);
-  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(180, 130, 255, 0.15);
+  border-radius: 16px;
   padding: 1.5rem 1.1rem;
   text-align: center;
-  box-shadow: 0 1px 8px rgba(120, 70, 120, 0.06);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  backdrop-filter: blur(8px);
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s;
 }
 
 .reason-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 6px 20px rgba(120, 70, 120, 0.1);
+  transform: translateY(-5px);
+  border-color: rgba(180, 130, 255, 0.35);
+  box-shadow: 0 8px 28px rgba(140, 80, 220, 0.15);
 }
 
 .reason-emoji {
@@ -319,7 +376,7 @@ body {
   font-weight: 300;
   font-size: 0.88rem;
   line-height: 1.6;
-  color: #4a3060;
+  color: rgba(220, 200, 255, 0.8);
 }
 
 /* Letter */
@@ -330,21 +387,21 @@ body {
 }
 
 .letter-box {
-  background: #fff;
-  border: 1px solid rgba(180, 130, 180, 0.15);
-  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(180, 130, 255, 0.18);
+  border-radius: 16px;
   padding: 2.2rem 2.6rem;
-  box-shadow: 0 2px 16px rgba(100, 60, 120, 0.07);
+  backdrop-filter: blur(12px);
   font-weight: 300;
   font-size: 1rem;
   line-height: 1.9;
-  color: #2a1a3e;
+  color: rgba(230, 210, 255, 0.88);
 }
 
 .letter-date {
   font-family: 'Playfair Display', serif;
   font-size: 0.8rem;
-  color: #b08ab0;
+  color: rgba(200, 160, 255, 0.6);
   letter-spacing: 0.18em;
   text-transform: uppercase;
   margin-bottom: 1.4rem;
@@ -355,7 +412,7 @@ body {
 .letter-signoff {
   font-family: 'Great Vibes', cursive;
   font-size: 1.9rem;
-  color: #8a3a7a;
+  color: rgba(255, 160, 210, 0.85);
   margin-top: 1.4rem;
   display: block;
   text-align: right;
@@ -367,7 +424,7 @@ body {
   padding: 3.5rem 1rem 2.5rem;
   font-weight: 300;
   font-size: 0.8rem;
-  color: #c0a0c0;
+  color: rgba(200, 160, 255, 0.35);
   letter-spacing: 0.12em;
   display: flex;
   flex-direction: column;
@@ -379,17 +436,17 @@ body {
   display: inline-block;
   font-family: 'Great Vibes', cursive;
   font-size: 1.35rem;
-  color: #b08090;
+  color: rgba(200, 140, 255, 0.6);
   text-decoration: none;
   letter-spacing: 0.04em;
-  border-bottom: 1px solid rgba(176, 128, 144, 0.3);
+  border-bottom: 1px solid rgba(200, 140, 255, 0.2);
   padding-bottom: 2px;
   transition: color 0.25s, border-color 0.25s;
 }
 
 .reveal-countdown-link:hover {
-  color: #d4a0b8;
-  border-color: rgba(212, 160, 184, 0.6);
+  color: rgba(220, 170, 255, 0.9);
+  border-color: rgba(220, 170, 255, 0.45);
 }
 
 /* ── Sword clash ── */

@@ -319,6 +319,24 @@ function WhiteFlash({ visible, onDone }: { visible: boolean; onDone: () => void 
   );
 }
 
+/* ─── Fun button ─── */
+function FunButton({ label, color }: { label: string; color: string }) {
+  const [popped, setPopped] = useState(false);
+  const tap = () => {
+    setPopped(true);
+    setTimeout(() => setPopped(false), 400);
+  };
+  return (
+    <button
+      className={`fun-btn${popped ? " fun-btn-pop" : ""}`}
+      style={{ "--btn-color": color } as React.CSSProperties}
+      onClick={tap}
+    >
+      {label}
+    </button>
+  );
+}
+
 /* ─── Polaroid card ─── */
 function PolaroidCard({ src, caption, delay }: { src: string; caption: string; delay: number }) {
   const [loaded, setLoaded] = useState(false);
@@ -407,7 +425,8 @@ export default function BirthdayGift() {
 
           {/* Photos */}
           <section className="gallery-section">
-            <h2>moments i want to remember</h2>
+            <p className="section-eyebrow">📸 moments</p>
+            <h2>i want to remember</h2>
             <div className="polaroid-grid">
               <PolaroidCard src="photo1.jpg" caption="always"    delay={0.1} />
               <PolaroidCard src="photo2.jpg" caption="my fav"    delay={0.25} />
@@ -415,8 +434,26 @@ export default function BirthdayGift() {
             </div>
           </section>
 
+          {/* Fun buttons */}
+          <section className="fun-section fade-in-up">
+            <p className="section-eyebrow">💀 real ones know</p>
+            <h2>things we both know</h2>
+            <div className="fun-buttons-grid">
+              {[
+                { label: "pixi sucks 💀",               color: "#ff6b9d" },
+                { label: "underground 2.0 changed everything 🎮", color: "#a78bfa" },
+                { label: "doja cat > everyone 🎤",      color: "#f59e0b" },
+                { label: "we are literally the same person 😭", color: "#34d399" },
+                { label: "best stalking duo fr 🕵️",      color: "#60a5fa" },
+              ].map((b, i) => (
+                <FunButton key={i} label={b.label} color={b.color} />
+              ))}
+            </div>
+          </section>
+
           {/* Reason cards */}
           <section className="reasons-section fade-in-up fade-in-up-delay-1">
+            <p className="section-eyebrow">🌟 appreciation post</p>
             <h2>a few things</h2>
             <div className="reasons-grid">
               {[
