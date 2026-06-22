@@ -1,6 +1,5 @@
 {
-  "cleanUrls": true,
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/" }
-  ]
+  "buildCommand": "echo 'No build needed'",
+  "installCommand": "echo 'No install needed'",
+  "outputDirectory": "."
 }
