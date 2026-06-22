@@ -207,7 +207,8 @@ export default function Countdown() {
   const mins  = Math.floor((totalSecs % 3600) / 60);
   const secs  = totalSecs % 60;
 
-  const arrived = totalSecs === 0;
+  const preview = new URLSearchParams(window.location.search).has("preview");
+  const arrived = preview || totalSecs === 0;
 
   return (
     <div className="countdown-page">
