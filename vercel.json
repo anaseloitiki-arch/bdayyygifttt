@@ -1,6 +1,5 @@
 {
-  "buildCommand": "pnpm run build",
-  "outputDirectory": "artifacts/client/dist",
-  "installCommand": "pnpm install",
+  "buildCommand": "cd artifacts/birthday-gift && npm install && npm run build",
+  "outputDirectory": "artifacts/birthday-gift/dist",
   "framework": null
 }
