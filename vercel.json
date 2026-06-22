@@ -1,6 +1,6 @@
 {
-  "routes": [
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/index.html" }
-  ]
+  "buildCommand": "pnpm run build",
+  "outputDirectory": "artifacts/client/dist",
+  "installCommand": "pnpm install",
+  "framework": null
 }
