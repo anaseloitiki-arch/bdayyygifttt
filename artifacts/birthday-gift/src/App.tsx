@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import BirthdayGift from "@/pages/BirthdayGift";
 import Countdown from "@/pages/Countdown";
+import SecretChat from "@/pages/SecretChat";
 
 function App() {
   return (
@@ -8,6 +9,7 @@ function App() {
       <Routes>
         <Route path="/" element={<BirthdayGift />} />
         <Route path="/countdown" element={<Countdown />} />
+        <Route path="/secret-chat" element={<SecretChat />} />
       </Routes>
     </BrowserRouter>
   );

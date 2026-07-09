@@ -4,6 +4,200 @@ import { MTLLoader } from "three/examples/jsm/loaders/MTLLoader.js";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 
 type Stage = "locked" | "flash" | "revealed";
+type IntroScope = "me" | "all";
+
+function getStoredIntroScope(): IntroScope {
+  if (typeof window === "undefined") return "me";
+  const stored = window.localStorage.getItem("birthday-skip-intro-scope");
+  return stored === "all" ? "all" : "me";
+}
+
+function getStoredSkipIntroEnabled(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.localStorage.getItem("birthday-skip-intro-enabled") === "true";
+}
+
+const CHAT_STORAGE_KEY = "birthday-gift-chat-messages";
+const CHAT_NAME_KEY = "birthday-gift-chat-name";
+const CHAT_CHANNEL = "birthday-gift-chat-channel";
+
+function createChatMessage(text: string, name: string, kind: "user" | "system") {
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    name,
+    text,
+    when: new Date().toISOString(),
+    kind,
+  };
+}
+
+function formatChatTime(iso: string) {
+  const date = new Date(iso);
+  return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
+
+function ChatWidget({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+  const [name, setName] = useState("");
+  const [draft, setDraft] = useState("");
+  const [error, setError] = useState("");
+  const [messages, setMessages] = useState<{id:string; name:string; text:string; when:string; kind:"user"|"system"}[]>([]);
+  const [initialized, setInitialized] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const storedName = window.localStorage.getItem(CHAT_NAME_KEY) ?? "";
+    setName(storedName);
+
+    const saved = window.localStorage.getItem(CHAT_STORAGE_KEY);
+    if (saved) {
+      try {
+        setMessages(JSON.parse(saved));
+      } catch {
+        setMessages([createChatMessage("welcome to the chat — enter your name and send a message.", "system", "system")]);
+      }
+    } else {
+      const welcome = createChatMessage("welcome to the chat — enter your name and send a message.", "system", "system");
+      setMessages([welcome]);
+      window.localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify([welcome]));
+    }
+
+    setInitialized(true);
+  }, []);
+
+  useEffect(() => {
+    if (!initialized || typeof window === "undefined") return;
+    window.localStorage.setItem(CHAT_NAME_KEY, name);
+  }, [name, initialized]);
+
+  useEffect(() => {
+    if (!name.trim()) {
+      setError("enter a name before sending");
+    } else {
+      setError("");
+    }
+  }, [name]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === CHAT_STORAGE_KEY && event.newValue) {
+        try {
+          setMessages(JSON.parse(event.newValue));
+        } catch {
+          // ignore malformed data
+        }
+      }
+    };
+
+    const channel = typeof BroadcastChannel !== "undefined" ? new BroadcastChannel(CHAT_CHANNEL) : null;
+    const handleChannel = (event: MessageEvent<{ type: string; messages: unknown }>) => {
+      if (event.data?.type === "chat-update" && Array.isArray(event.data.messages)) {
+        setMessages(event.data.messages as any);
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+    channel?.addEventListener("message", handleChannel as EventListener);
+
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      channel?.removeEventListener("message", handleChannel as EventListener);
+      channel?.close();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (open && bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+  }, [messages, open]);
+
+  const saveMessages = (next: typeof messages) => {
+    setMessages(next);
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(next));
+    if (typeof BroadcastChannel !== "undefined") {
+      const channel = new BroadcastChannel(CHAT_CHANNEL);
+      channel.postMessage({ type: "chat-update", messages: next });
+      channel.close();
+    }
+  };
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    const trimmedName = name.trim();
+    const trimmedDraft = draft.trim();
+    if (trimmedName.length < 2) {
+      setError("enter the name people will see");
+      return;
+    }
+    if (!trimmedDraft) {
+      setError("write a message first");
+      return;
+    }
+
+    const nextMessage = createChatMessage(trimmedDraft, trimmedName, "user");
+    saveMessages([...messages, nextMessage].slice(-35));
+    setDraft("");
+    setError("");
+  };
+
+  return (
+    <div className={`chat-widget${open ? " open" : ""}`}>
+      <div className="chat-widget-top">
+        <div>
+          <p className="chat-widget-title">VIE CHAT</p>
+          <p className="chat-widget-subtitle">visitor room</p>
+        </div>
+        <button className="chat-widget-toggle" onClick={onToggle}>{open ? "–" : "+"}</button>
+      </div>
+
+      {open && (
+        <>
+          <div className="chat-widget-body">
+            <div className="chat-widget-messages">
+              {messages.map((message) => (
+                <div key={message.id} className={`chat-bubble ${message.kind === "system" ? "chat-system" : "chat-user"}`}>
+                  <div className="chat-bubble-head">
+                    <span>{message.name}</span>
+                    <small>{formatChatTime(message.when)}</small>
+                  </div>
+                  <p>{message.text}</p>
+                </div>
+              ))}
+              <div ref={bottomRef} />
+            </div>
+          </div>
+
+          <form className="chat-widget-form" onSubmit={handleSubmit}>
+            <input
+              className="chat-widget-name"
+              type="text"
+              placeholder="your displayed name"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              maxLength={20}
+            />
+            <textarea
+              className="chat-widget-input"
+              placeholder="type a message"
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              rows={2}
+              maxLength={160}
+            />
+            {error && <p className="chat-widget-error">{error}</p>}
+            <button className="chat-widget-send" type="submit" disabled={!name.trim() || !draft.trim()}>
+              send
+            </button>
+          </form>
+        </>
+      )}
+    </div>
+  );
+}
 
 /* ─── Soft floating stars for stage 1 ─── */
 interface Star {
@@ -355,21 +549,147 @@ function PolaroidCard({ src, caption, delay }: { src: string; caption: string; d
   );
 }
 
+function SecretPanel({
+  open,
+  onClose,
+  onSkipIntro,
+  onOpenCountdown,
+  onOpenSecretChat,
+  score,
+  onTapMiniGame,
+  introScope,
+  onSetIntroScope,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSkipIntro: () => void;
+  onOpenCountdown: () => void;
+  onOpenSecretChat: () => void;
+  score: number;
+  onTapMiniGame: () => void;
+  introScope: IntroScope;
+  onSetIntroScope: (scope: IntroScope) => void;
+}) {
+  if (!open) return null;
+
+  return (
+    <div className="secret-panel-backdrop" onClick={onClose}>
+      <div className="secret-panel" onClick={(e) => e.stopPropagation()}>
+        <button className="secret-panel-close" onClick={onClose} aria-label="Close secret panel">
+          ×
+        </button>
+
+        <p className="secret-panel-eyebrow">hidden access</p>
+        <h2>mini-game control room</h2>
+        <p className="secret-panel-text">only the chosen one gets this panel.</p>
+
+        <div className="secret-panel-actions">
+          <button className="secret-panel-btn primary" onClick={onSkipIntro}>skip intro</button>
+          <button className="secret-panel-btn" onClick={onOpenCountdown}>open countdown</button>
+          <button className="secret-panel-btn" onClick={onOpenSecretChat}>open secret chat</button>
+        </div>
+
+        <div className="secret-panel-scope">
+          <p className="secret-panel-scope-title">skip intro for</p>
+          <div className="secret-panel-scope-row">
+            <button
+              className={`secret-panel-btn ${introScope === "me" ? "active" : ""}`}
+              onClick={() => onSetIntroScope("me")}
+            >
+              me
+            </button>
+            <button
+              className={`secret-panel-btn ${introScope === "all" ? "active" : ""}`}
+              onClick={() => onSetIntroScope("all")}
+            >
+              all
+            </button>
+          </div>
+          <p className="secret-panel-scope-note">me = your browser only • all = shared default</p>
+        </div>
+
+        <div className="secret-panel-game">
+          <p className="secret-panel-game-title">tiny admin mini-game</p>
+          <button className="secret-panel-heart-btn" onClick={onTapMiniGame}>♥ tap me</button>
+          <p className="secret-panel-game-score">score: {score}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Main component ─── */
 export default function BirthdayGift() {
-  const skipIntro = new URLSearchParams(window.location.search).has("skip");
-  const [stage,     setStage]     = useState<Stage>(skipIntro ? "revealed" : "locked");
+  const skipIntroQuery = new URLSearchParams(window.location.search).has("skip");
+  const [stage, setStage] = useState<Stage>(skipIntroQuery || getStoredSkipIntroEnabled() ? "revealed" : "locked");
   const [password,  setPassword]  = useState("");
   const [shaking,   setShaking]   = useState(false);
   const [errorHint, setErrorHint] = useState("");
   const [showFlash, setShowFlash] = useState(false);
+  const [secretPanelOpen, setSecretPanelOpen] = useState(false);
+  const [secretGameScore, setSecretGameScore] = useState(0);
+  const secretSequenceRef = useRef("");
+  const [adminUnlocked, setAdminUnlocked] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [introScope, setIntroScope] = useState<IntroScope>(() => getStoredIntroScope());
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLSelectElement) {
+        return;
+      }
+
+      if (event.key === "Escape") {
+        setSecretPanelOpen(false);
+        return;
+      }
+
+      const key = event.key.toLowerCase();
+      if (key === "s" && event.altKey && event.ctrlKey) {
+        setSecretPanelOpen(true);
+        return;
+      }
+
+      if (!["arrowup", "arrowdown", "arrowleft", "arrowright", "b", "a", "s", "k", "i", "p"].includes(key)) {
+        secretSequenceRef.current = "";
+        return;
+      }
+
+      const normalized = key === "arrowup" ? "u" : key === "arrowdown" ? "d" : key === "arrowleft" ? "l" : key === "arrowright" ? "r" : key;
+      secretSequenceRef.current += normalized;
+
+      if (secretSequenceRef.current.endsWith("skip")) {
+        setSecretPanelOpen(true);
+        secretSequenceRef.current = "";
+        return;
+      }
+
+      if (secretSequenceRef.current.endsWith("uuddlrlrba")) {
+        setSecretPanelOpen(true);
+        secretSequenceRef.current = "";
+        return;
+      }
+
+      if (secretSequenceRef.current.length > 20) {
+        secretSequenceRef.current = secretSequenceRef.current.slice(-20);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/\D/g, "").slice(0, 4);
     setPassword(val);
     setErrorHint("");
 
-    if (val === "0308") {
+    if (val === "0310") {
+      setAdminUnlocked(true);
+      setSecretPanelOpen(true);
+      setShowFlash(false);
+      setErrorHint("admin access granted");
+    } else if (val === "0308") {
       setShowFlash(true);
     } else if (val.length === 4) {
       setShaking(true);
@@ -378,10 +698,64 @@ export default function BirthdayGift() {
     }
   }, []);
 
-  const handleReveal = useCallback(() => setStage("revealed"), []);
+  const handleReveal = useCallback(() => {
+    setStage("revealed");
+    setShowFlash(false);
+  }, []);
+
+  const handleSetIntroScope = useCallback((scope: IntroScope) => {
+    setIntroScope(scope);
+    window.localStorage.setItem("birthday-skip-intro-scope", scope);
+    window.localStorage.setItem("birthday-skip-intro-enabled", "true");
+
+    if (scope === "all") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("skip", "1");
+      window.history.replaceState({}, "", `${url.pathname}${url.search}`);
+    } else {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("skip");
+      window.history.replaceState({}, "", `${url.pathname}${url.search}`);
+    }
+
+    setStage("revealed");
+    setShowFlash(false);
+    setSecretPanelOpen(false);
+  }, []);
+
+  const handleSkipIntro = useCallback(() => {
+    setSecretPanelOpen(false);
+    setShowFlash(false);
+    setStage("revealed");
+    window.localStorage.setItem("birthday-skip-intro-enabled", "true");
+    window.localStorage.setItem("birthday-skip-intro-scope", introScope);
+  }, [introScope]);
+
+  const handleOpenCountdown = useCallback(() => {
+    window.location.assign("/countdown");
+  }, []);
+
+  const handleOpenSecretChat = useCallback(() => {
+    window.location.assign("/secret-chat");
+  }, []);
+
+  const handleMiniGameTap = useCallback(() => {
+    setSecretGameScore((prev) => prev + 1);
+  }, []);
 
   return (
     <>
+      <SecretPanel
+        open={secretPanelOpen}
+        onClose={() => setSecretPanelOpen(false)}
+        onSkipIntro={handleSkipIntro}
+        onOpenCountdown={handleOpenCountdown}
+        onOpenSecretChat={handleOpenSecretChat}
+        score={secretGameScore}
+        onTapMiniGame={handleMiniGameTap}
+        introScope={introScope}
+        onSetIntroScope={handleSetIntroScope}
+      />
       <WhiteFlash visible={showFlash} onDone={handleReveal} />
 
       {/* ── Stage 1 ── */}
@@ -498,6 +872,11 @@ export default function BirthdayGift() {
               view the countdown →
             </a>
           </footer>
+
+          <button className="floating-chat-launcher" onClick={() => setChatOpen(true)}>
+            💬 chat
+          </button>
+          <ChatWidget open={chatOpen} onToggle={() => setChatOpen((prev) => !prev)} />
         </div>
       )}
     </>
