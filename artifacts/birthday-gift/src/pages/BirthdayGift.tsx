@@ -1,5 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from "react";
 import * as THREE from "three";
+import { db } from "./firebase";
+import { ref, push, onValue, query, limitToLast } from "firebase/database";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { MTLLoader } from "three/examples/jsm/loaders/MTLLoader.js";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 
@@ -17,9 +19,7 @@ function getStoredSkipIntroEnabled(): boolean {
   return window.localStorage.getItem("birthday-skip-intro-enabled") === "true";
 }
 
-const CHAT_STORAGE_KEY = "birthday-gift-chat-messages";
 const CHAT_NAME_KEY = "birthday-gift-chat-name";
-const CHAT_CHANNEL = "birthday-gift-chat-channel";
 
 function createChatMessage(text: string, name: string, kind: "user" | "system") {
   return {
@@ -41,35 +41,18 @@ function ChatWidget({ open, onToggle }: { open: boolean; onToggle: () => void })
   const [draft, setDraft] = useState("");
   const [error, setError] = useState("");
   const [messages, setMessages] = useState<{id:string; name:string; text:string; when:string; kind:"user"|"system"}[]>([]);
-  const [initialized, setInitialized] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-
     const storedName = window.localStorage.getItem(CHAT_NAME_KEY) ?? "";
     setName(storedName);
-
-    const saved = window.localStorage.getItem(CHAT_STORAGE_KEY);
-    if (saved) {
-      try {
-        setMessages(JSON.parse(saved));
-      } catch {
-        setMessages([createChatMessage("welcome to the chat — enter your name and send a message.", "system", "system")]);
-      }
-    } else {
-      const welcome = createChatMessage("welcome to the chat — enter your name and send a message.", "system", "system");
-      setMessages([welcome]);
-      window.localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify([welcome]));
-    }
-
-    setInitialized(true);
   }, []);
 
   useEffect(() => {
-    if (!initialized || typeof window === "undefined") return;
+    if (typeof window === "undefined") return;
     window.localStorage.setItem(CHAT_NAME_KEY, name);
-  }, [name, initialized]);
+  }, [name]);
 
   useEffect(() => {
     if (!name.trim()) {
@@ -80,32 +63,24 @@ function ChatWidget({ open, onToggle }: { open: boolean; onToggle: () => void })
   }, [name]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key === CHAT_STORAGE_KEY && event.newValue) {
-        try {
-          setMessages(JSON.parse(event.newValue));
-        } catch {
-          // ignore malformed data
-        }
-      }
-    };
+    const messagesRef = query(ref(db, "messages"), limitToLast(50));
+    const unsubscribe = onValue(messagesRef, (snapshot) => {
+      const data = snapshot.val() ?? {};
+      const nextMessages = Object.entries(data as Record<string, { name?: string; text?: string; when?: string; kind?: string }> )
+        .map(([id, value]) => ({
+          id,
+          name: typeof value?.name === "string" ? value.name : "",
+          text: typeof value?.text === "string" ? value.text : "",
+          when: typeof value?.when === "string" ? value.when : "",
+          kind: (value?.kind === "user" ? "user" : "system") as "user" | "system",
+        }))
+        .filter((message) => message.text || message.name || message.when)
+        .sort((a, b) => a.when.localeCompare(b.when));
 
-    const channel = typeof BroadcastChannel !== "undefined" ? new BroadcastChannel(CHAT_CHANNEL) : null;
-    const handleChannel = (event: MessageEvent<{ type: string; messages: unknown }>) => {
-      if (event.data?.type === "chat-update" && Array.isArray(event.data.messages)) {
-        setMessages(event.data.messages as any);
-      }
-    };
+      setMessages(nextMessages);
+    });
 
-    window.addEventListener("storage", handleStorage);
-    channel?.addEventListener("message", handleChannel as EventListener);
-
-    return () => {
-      window.removeEventListener("storage", handleStorage);
-      channel?.removeEventListener("message", handleChannel as EventListener);
-      channel?.close();
-    };
+    return unsubscribe;
   }, []);
 
   useEffect(() => {
@@ -113,17 +88,6 @@ function ChatWidget({ open, onToggle }: { open: boolean; onToggle: () => void })
       bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
     }
   }, [messages, open]);
-
-  const saveMessages = (next: typeof messages) => {
-    setMessages(next);
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(next));
-    if (typeof BroadcastChannel !== "undefined") {
-      const channel = new BroadcastChannel(CHAT_CHANNEL);
-      channel.postMessage({ type: "chat-update", messages: next });
-      channel.close();
-    }
-  };
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -138,8 +102,12 @@ function ChatWidget({ open, onToggle }: { open: boolean; onToggle: () => void })
       return;
     }
 
-    const nextMessage = createChatMessage(trimmedDraft, trimmedName, "user");
-    saveMessages([...messages, nextMessage].slice(-35));
+    push(ref(db, "messages"), {
+      name: trimmedName,
+      text: trimmedDraft,
+      when: new Date().toISOString(),
+      kind: "user",
+    });
     setDraft("");
     setError("");
   };

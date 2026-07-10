@@ -76,6 +76,7 @@
     "zod": "catalog:"
   },
   "dependencies": {
+    "firebase": "^12.16.0",
     "react-router-dom": "^7.18.0",
     "three": "^0.184.0"
   }
